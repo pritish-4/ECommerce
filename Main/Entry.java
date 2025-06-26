@@ -41,7 +41,7 @@ public class Entry {
                     List<Product> products = productService.getAllProducts();
                     System.out.println("Available Products:");
                     for (Product p : products) {
-                        System.out.printf("ID: %s | %s | ₹%.2f | Stock: %d\n",
+                        System.out.printf("ID: %s | %s | %.2f | Stock: %d\n",
                                 p.getId(), p.getName(), p.getPrice(), p.getStock());
                     }
                     break;

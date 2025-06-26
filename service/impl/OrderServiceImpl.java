@@ -1,30 +1,33 @@
 package service.impl;
 
+import dao.OrderDAO;
+import dao.daoImpl.OrderDAOImpl;
 import model.*;
 import service.OrderService;
 import service.PaymentService;
-import util.DBConnection;
 import util.IdGenerator;
 
-import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class OrderServiceImpl implements OrderService {
 
+    private final OrderDAO orderDAO = new OrderDAOImpl();
+
     @Override
     public Order placeOrder(User user, PaymentService paymentService) {
         Cart cart = user.getCart();
         double totalAmount = cart.calculateTotal();
-
         boolean paymentSuccess = paymentService.processPayment(totalAmount);
+
         String orderId = IdGenerator.generateOrderId();
         String status = paymentSuccess ? "Confirmed" : "Failed";
 
         List<Product> productList = new ArrayList<>();
-        for (Product p : cart.getItems().keySet()) {
-            int quantity = cart.getItems().get(p);
-            for (int i = 0; i < quantity; i++) {
+        for (var entry : cart.getItems().entrySet()) {
+            Product p = entry.getKey();
+            int qty = entry.getValue();
+            for (int i = 0; i < qty; i++) {
                 productList.add(p);
             }
         }
@@ -33,32 +36,16 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(status);
 
         if (paymentSuccess) {
-        user.addOrder(order);
-        cart.clearCart();
-        saveOrderToDB(order, user.getUserId());
+            user.addOrder(order);
+            cart.clearCart();
+            orderDAO.save(order, user.getUserId());
 
-        String shipmentId = IdGenerator.generateShipmentId();
-        Shipment shipment = new Shipment(shipmentId, orderId);
-        order.setShipment(shipment);
-    }
-
+            // Shipment logic
+            String shipmentId = IdGenerator.generateShipmentId();
+            Shipment shipment = new Shipment(shipmentId, orderId);
+            order.setShipment(shipment);
+        }
 
         return order;
     }
-
-    private void saveOrderToDB(Order order, String userId) {
-        try (Connection conn = DBConnection.getConnection()) {
-            String sql = "INSERT INTO orders (order_id, user_id, total_amount, status) VALUES (?, ?, ?, ?)";
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setString(1, order.getOrderId());
-            stmt.setString(2, userId);
-            stmt.setDouble(3, order.getTotalAmount());
-            stmt.setString(4, order.getStatus());
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    
 }
