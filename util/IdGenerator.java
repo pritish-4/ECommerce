@@ -11,4 +11,9 @@ public class IdGenerator {
     public static String generateOrderId() {
         return "ORD" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
     }
+
+    public static String generateShipmentId() {
+    return "SHIP" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+}
+
 }

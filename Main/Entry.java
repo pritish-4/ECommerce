@@ -63,19 +63,23 @@ public class Entry {
 
                 case 3:
                     Cart cart = user.getCart();
-                    System.out.println("🧺 Your Cart:");
+                    System.out.println("Your Cart:");
                     for (Product p : cart.getItems().keySet()) {
-                        System.out.printf("%s (x%d) - ₹%.2f\n",
+                        System.out.printf("%s (x%d) - %.2f\n",
                                 p.getName(), cart.getItems().get(p),
                                 p.getPrice() * cart.getItems().get(p));
                     }
-                    System.out.println("Total: ₹" + cartService.calculateTotal(cart));
+                    System.out.println("Total: " + cartService.calculateTotal(cart));
                     break;
 
                 case 4:
                     Order order = orderService.placeOrder(user, paymentService);
                     System.out.println("Order Status: " + order.getStatus());
                     System.out.println("Order ID: " + order.getOrderId());
+                    if (order.getShipment() != null) {
+                        System.out.println("Shipment ID: " + order.getShipment().getShipmentId());
+                        System.out.println("Shipment Status: " + order.getShipment().getStatus());
+                    }
                     break;
 
                 case 5:

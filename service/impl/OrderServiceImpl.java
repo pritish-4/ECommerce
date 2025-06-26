@@ -33,10 +33,15 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(status);
 
         if (paymentSuccess) {
-            user.addOrder(order);
-            cart.clearCart();
-            saveOrderToDB(order, user.getUserId());
-        }
+        user.addOrder(order);
+        cart.clearCart();
+        saveOrderToDB(order, user.getUserId());
+
+        String shipmentId = IdGenerator.generateShipmentId();
+        Shipment shipment = new Shipment(shipmentId, orderId);
+        order.setShipment(shipment);
+    }
+
 
         return order;
     }
@@ -54,4 +59,6 @@ public class OrderServiceImpl implements OrderService {
             e.printStackTrace();
         }
     }
+
+    
 }

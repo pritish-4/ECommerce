@@ -7,6 +7,7 @@ public class Order {
     private List<Product> products;
     private double totalAmount;
     private String status;
+    private Shipment shipment;
 
     public Order(String orderId, List<Product> products, double totalAmount) {
         this.orderId = orderId;
@@ -22,5 +23,13 @@ public class Order {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public void setShipment(Shipment shipment) {
+        this.shipment = shipment;
+    }
+
+    public Shipment getShipment() {
+        return shipment;
     }
 }
