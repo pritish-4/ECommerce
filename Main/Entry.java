@@ -1,5 +1,7 @@
 package Main;
 
+import dao.UserDAO;
+import dao.daoImpl.UserDAOImpl;
 import model.*;
 import service.*;
 import service.impl.*;
@@ -11,18 +13,27 @@ import java.util.Scanner;
 public class Entry {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+
         ProductService productService = new ProductServiceImpl();
         CartService cartService = new CartServiceImpl();
         OrderService orderService = new OrderServiceImpl();
-        PaymentService paymentService = new DummyPaymentService();
+        UserDAO userDAO = new UserDAOImpl();
 
-        System.out.println("Welcome to the E-Commerce App!");
-        System.out.print("Enter your name: ");
-        String name = scanner.nextLine();
+        System.out.println("Welcome to E-Commerce App");
         System.out.print("Enter your email: ");
         String email = scanner.nextLine();
-        String userId = IdGenerator.generateUserId();
-        User user = new User(userId, name, email);
+        User user = userDAO.findByEmail(email);
+
+        if (user != null) {
+            System.out.println("Welcome back, " + user.getName());
+        } else {
+            System.out.print("New user! Enter your name: ");
+            String name = scanner.nextLine();
+            String userId = IdGenerator.generateUserId();
+            user = new User(userId, name, email);
+            userDAO.save(user);
+            System.out.println("Registration successful!");
+        }
 
         boolean running = true;
         while (running) {
@@ -39,7 +50,7 @@ public class Entry {
             switch (choice) {
                 case 1:
                     List<Product> products = productService.getAllProducts();
-                    System.out.println("Available Products:");
+                    System.out.println("Products:");
                     for (Product p : products) {
                         System.out.printf("ID: %s | %s | %.2f | Stock: %d\n",
                                 p.getId(), p.getName(), p.getPrice(), p.getStock());
@@ -63,22 +74,47 @@ public class Entry {
 
                 case 3:
                     Cart cart = user.getCart();
-                    System.out.println("Your Cart:");
+                    System.out.println("Cart:");
                     for (Product p : cart.getItems().keySet()) {
-                        System.out.printf("%s (x%d) - %.2f\n",
-                                p.getName(), cart.getItems().get(p),
-                                p.getPrice() * cart.getItems().get(p));
+                        int qty = cart.getItems().get(p);
+                        System.out.printf("%s (x%d) - %.2f\n", p.getName(), qty, p.getPrice() * qty);
                     }
                     System.out.println("Total: " + cartService.calculateTotal(cart));
                     break;
 
                 case 4:
+                    if (user.getCart().getItems().isEmpty()) {
+                        System.out.println("Nothing in cart to ship.");
+                        break;
+                    }
+
+                    System.out.println("Choose Payment Method:");
+                    System.out.println("1. UPI");
+                    System.out.println("2. Card");
+                    System.out.println("3. Cash on Delivery");
+                    System.out.print("Enter option: ");
+                    int payOpt = scanner.nextInt();
+                    scanner.nextLine();
+
+                    PaymentService paymentService;
+                    switch (payOpt) {
+                        case 1 -> paymentService = new DummyUpiPayment();
+                        case 2 -> paymentService = new DummyCardPayment();
+                        case 3 -> paymentService = new DummyCashOnDelivery();
+                        default -> {
+                            System.out.println("Invalid option. Defaulting to UPI.");
+                            paymentService = new DummyUpiPayment();
+                        }
+                    }
+
                     Order order = orderService.placeOrder(user, paymentService);
-                    System.out.println("Order Status: " + order.getStatus());
-                    System.out.println("Order ID: " + order.getOrderId());
-                    if (order.getShipment() != null) {
-                        System.out.println("Shipment ID: " + order.getShipment().getShipmentId());
-                        System.out.println("Shipment Status: " + order.getShipment().getStatus());
+                    if (order != null) {
+                        System.out.println("Order Status: " + order.getStatus());
+                        System.out.println("Order ID: " + order.getOrderId());
+                        if (order.getShipment() != null) {
+                            System.out.println("Shipment ID: " + order.getShipment().getShipmentId());
+                            System.out.println("Shipment Status: " + order.getShipment().getStatus());
+                        }
                     }
                     break;
 
